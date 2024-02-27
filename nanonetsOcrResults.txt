@@ -1,0 +1,13 @@
+Label: invoice_number, Value: NMT82-42-3531046505
+Label: invoice_date, Value: 10 - Jan - 2024
+Label: buyer_address, Value: 25 BALAJI ENCLAVE PART - 1 BAGHANA
+NEEMUCH
+Label: invoice_amount, Value: 285.00
+Label: invoice_amount, Value: 285.00
+Label: currency, Value: INR
+Label: table, Value: table
+Label: seller_name, Value: Pradesh Paschim Kshetra Vidyut Vitran Company Ltd.
+Label: seller_address, Value: G.P.H. Compound , Pologround , Indore ( M.P. )
+Label: seller_website, Value: http://www.mpwz.co.in
+Label: buyer_name, Value: VINEETA JAIN SHEKHAR JAIN
+Label: subtotal, Value: 299.82
