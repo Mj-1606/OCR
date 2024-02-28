@@ -1,15 +1,6 @@
-package com.spring.ocr.entity;
+package com.spring.ocr.dto;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-
-@Entity
-public class BillData {
-    @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
-    private int id;
+public class BillDataDto {
     private String billNumber;
     private Double noOfUnits;   // electricity units used
     private String billAmount;
@@ -92,27 +83,4 @@ public class BillData {
         this.providerAddress = providerAddress;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public BillData(int id, String billNumber, Double noOfUnits, String billAmount, String currency, String billDate, String provider, String consumerName, String consumerAddress, String providerAddress) {
-        this.id = id;
-        this.billNumber = billNumber;
-        this.noOfUnits = noOfUnits;
-        this.billAmount = billAmount;
-        this.currency = currency;
-        this.billDate = billDate;
-        this.provider = provider;
-        this.consumerName = consumerName;
-        this.consumerAddress = consumerAddress;
-        this.providerAddress=providerAddress;
-    }
-
-    public BillData() {
-    }
 }
