@@ -4,49 +4,60 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spring.ocr.dto.BillDataDto;
 import com.spring.ocr.entity.BillData;
+import com.spring.ocr.service.IOcrService;
 import okhttp3.*;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 @Service
-public class OcrServiceNanonets {
+@Primary
+public class OcrServiceNanonets implements IOcrService {
+    private static final Logger logger = Logger.getLogger(OcrServiceNanonets.class.getName());
     private static final String apiKey = "19b53ba1-d4eb-11ee-9d87-725751de663d";
     private static final String modelId = "c846b738-7fda-4d92-89a1-0ebc4166a62a";
-//    public static void main(String[] args) {
-//        String filePath = "C:\\Users\\garvi\\OneDrive\\Pictures\\Screenshots\\ebill.png";
-//
-////        String filePath = "C:\\Users\\garvi\\Downloads\\N3531046505 (21).pdf";
-//
+
+    public static void main(String[] args) {
+        String filePath = "C:\\Users\\garvi\\OneDrive\\Pictures\\Screenshots\\ebill.png";
+//        String filePath = "C:\\Users\\garvi\\Downloads\\N3531046505 (21).pdf";
+
 //        OcrServiceNanonets OCRServiceNanonets = new OcrServiceNanonets();
 //        String extractedText = OCRServiceNanonets.performOCR(filePath);
 ////        String jsonResponse = "{\"message\":\"Success\",\"result\":[{\"message\":\"Success\",\"input\":\"image.png\",\"prediction\":[{\"id\":\"acf04516-a322-49b3-b149-f12f934e840a\",\"label\":\"seller_address\",\"xmin\":189,\"ymin\":34,\"xmax\":422,\"ymax\":46,\"score\":0.58660215,\"ocr_text\":\"G.P.H. Compound , Pologround , Indore ( M.P. )\",\"type\":\"field\",\"status\":\"correctly_predicted\",\"page_no\":0,\"label_id\":\"2b60f581-9f6d-4444-87ef-ce8d959c8a7a\"},{\"id\":\"a3de5f94-7e2a-4062-b7b2-a32b4ba8b351\"}] } ]}";
 //
-//        BillData billData= parseJsonResponse(extractedText);
-//        System.out.println(billDataDto.toString());
-//    }
+//        BillDataDto billData= parseJsonResponse(extractedText);
+//        System.out.println(billData.toString());
+    }
 
     public OcrServiceNanonets() {
 
     }
 
-    public BillDataDto getExtractedData(String filePath){
+    public BillDataDto getExtractedData(String filePath) {
         String extractedText = performOCR(filePath);
-        BillDataDto billdataDto= parseJsonResponse(extractedText);
+        BillDataDto billdataDto = parseJsonResponse(extractedText);
         return billdataDto;
     }
-    public static String performOCR(String filePath) {
-        OkHttpClient client = new OkHttpClient();
 
+    public  String performOCR(String filePath) {
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        builder.connectTimeout(5, TimeUnit.MINUTES) // connect timeout
+                .writeTimeout(5, TimeUnit.MINUTES) // write timeout
+                .readTimeout(5, TimeUnit.MINUTES); // read timeout
+
+        OkHttpClient client = builder.build();
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("file", "file.png",
                         RequestBody.create(MediaType.parse("application/octet-stream"), new File(filePath)))
                 .build();
-
+        logger.info("Requesting Nanonets OCR service");
         Request request = new Request.Builder()
-                .url("https://app.nanonets.com/api/v2/OCR/Model/c846b738-7fda-4d92-89a1-0ebc4166a62a/LabelFile/?async=false")
+                .url("https://app.nanonets.com/api/v2/OCR/Model/" + modelId + "/LabelFile/?async=false")
                 .post(requestBody)
                 .addHeader("Authorization", Credentials.basic(apiKey, ""))
                 .build();
@@ -58,15 +69,16 @@ public class OcrServiceNanonets {
 
             // Extract the text from the response
             return response.body().string();
-        } catch (IOException e) {
+        } catch (Exception e) {
+            logger.warning(e + " occured in parseJsonRequest");
             e.printStackTrace();
             return "Error during OCR: " + e.getMessage();
         }
     }
 
-    public static BillDataDto parseJsonResponse(String jsonResponse) {
+    public  BillDataDto parseJsonResponse(String jsonResponse) {
         try {
-            BillDataDto billDataDto=new BillDataDto();
+            BillDataDto billDataDto = new BillDataDto();
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(jsonResponse);
 
@@ -81,22 +93,21 @@ public class OcrServiceNanonets {
                             if (prediction.has("label") && prediction.has("ocr_text")) {
                                 String label = prediction.get("label").asText();
                                 String ocrText = prediction.get("ocr_text").asText();
-                                if(label.equalsIgnoreCase("invoice_number")){
+                                if (label.equalsIgnoreCase("invoice_number")) {
                                     billDataDto.setBillNumber(ocrText);
-                                }
-                                else if(label.equalsIgnoreCase("invoice_date")){
+                                } else if (label.equalsIgnoreCase("invoice_date")) {
                                     billDataDto.setBillDate(ocrText);
-                                }else if(label.equalsIgnoreCase("invoice_amount")){
+                                } else if (label.equalsIgnoreCase("invoice_amount")) {
                                     billDataDto.setBillAmount(ocrText);
-                                }else if(label.equalsIgnoreCase("currency")){
+                                } else if (label.equalsIgnoreCase("currency")) {
                                     billDataDto.setCurrency(ocrText);
-                                }else if(label.equalsIgnoreCase("seller_name")){
+                                } else if (label.equalsIgnoreCase("seller_name")) {
                                     billDataDto.setProvider(ocrText);
-                                }else if(label.equalsIgnoreCase("seller_address")){
+                                } else if (label.equalsIgnoreCase("seller_address")) {
                                     billDataDto.setProviderAddress(ocrText);
-                                }else if(label.equalsIgnoreCase("buyer_name")){
+                                } else if (label.equalsIgnoreCase("buyer_name")) {
                                     billDataDto.setConsumerName(ocrText);
-                                }else if(label.equalsIgnoreCase("buyer_address")){
+                                } else if (label.equalsIgnoreCase("buyer_address")) {
                                     billDataDto.setConsumerAddress(ocrText);
                                 }
 //                                System.out.println("Label: " + label + ", Value: " + ocrText);
@@ -107,7 +118,7 @@ public class OcrServiceNanonets {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.warning(e.getMessage() + " occured in parseJsonRequest");
         }
         return null;
     }
